@@ -1,14 +1,6 @@
 # WP Password Argon Two
 
-[![Latest Stable Version](https://poser.pugx.org/typisttech/wp-password-argon-two/v/stable)](https://packagist.org/packages/typisttech/wp-password-argon-two)
-[![Total Downloads](https://poser.pugx.org/typisttech/wp-password-argon-two/downloads)](https://packagist.org/packages/typisttech/wp-password-argon-two)
-[![Build Status](https://travis-ci.org/TypistTech/wp-password-argon-two.svg?branch=master)](https://travis-ci.org/TypistTech/wp-password-argon-two)
-[![StyleCI](https://styleci.io/repos/121093174/shield?branch=master)](https://styleci.io/repos/121093174)
-[![License](https://poser.pugx.org/typisttech/wp-password-argon-two/license)](https://packagist.org/packages/typisttech/wp-password-argon-two)
-[![Donate via PayPal](https://img.shields.io/badge/Donate-PayPal-blue.svg)](https://typist.tech/donate/wp-password-argon-two/)
-[![Hire Typist Tech](https://img.shields.io/badge/Hire-Typist%20Tech-ff69b4.svg)](https://typist.tech/contact/)
-
-Securely store WordPress user passwords in database with Argon2i hashing and SHA-512 HMAC using PHP's native functions.
+Securely store WordPress user passwords in database with Argon2i hashing and Blake2b using PHP + libsodium.
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
@@ -19,11 +11,11 @@ Securely store WordPress user passwords in database with Argon2i hashing and SHA
 - [Requirements](#requirements)
   - [Do Your Homework](#do-your-homework)
   - [PHP 7.2+ and compiled `--with-password-argon2`](#php-72-and-compiled---with-password-argon2)
+  - [Libsodium is installed](#libsodium-installed)
 - [Installation](#installation)
   - [Step 0](#step-0)
   - [Step 1](#step-1)
-    - [Option A: Via Composer Autoload (Recommended)](#option-a-via-composer-autoload-recommended)
-    - [Option B: As a Must-use Plugin (Last Resort)](#option-b-as-a-must-use-plugin-last-resort)
+    - [As a Must-use Plugin (Composer installation is WIP)](#option-b)
   - [Step 2](#step-2)
     - [Option A - Use Constants](#option-a---use-constants)
     - [Option B - Use Environment Variables](#option-b---use-environment-variables)
@@ -60,18 +52,19 @@ Securely store WordPress user passwords in database with Argon2i hashing and SHA
 
 ## Goal
 
-Replace WordPress' [phpass](http://openwall.com/phpass) hasher with Argon2i hashing and SHA-512 HMAC.
+Replace WordPress' [phpass](http://openwall.com/phpass) hasher with Argon2i hashing and Blake2b.
 
 Adopted from [Mozilla secure coding guidelines](https://wiki.mozilla.org/WebAppSec/Secure_Coding_Guidelines#Password_Storage):
 
-* Passwords stored in a database should using the hmac+argon2i function.
+* Passwords stored in a database should using the blake2b+argon2i function.
+* Blake2b hash is generated using function from libsodium
 
-The purpose of HMAC and Argon2i storage is as follows:
+The purpose of Blake2b and Argon2i storage is as follows:
 
 * Argon2i provides a hashing mechanism which can be configured to consume sufficient time to prevent brute forcing of hash values even with many computers
 * Argon2i can be easily adjusted at any time to increase the amount of work and thus provide protection against more powerful systems
-* The nonce(pepper) for the HMAC value is designed to be stored on the file system and not in the databases storing the password hashes. In the event of a compromise of hash values due to SQL injection, the nonce(pepper) will still be an unknown value since it would not be compromised from the file system. This significantly increases the complexity of brute forcing the compromised hashes considering both Argon2i and a large unknown nonce(pepper) value
-* The HMAC operation is simply used as a secondary defense in the event there is a design weakness with Argon2i that could leak information about the password or aid an attacker
+* The nonce(pepper) for the Blake2b value is designed to be stored on the file system and not in the databases storing the password hashes. In the event of a compromise of hash values due to SQL injection, the nonce(pepper) will still be an unknown value since it would not be compromised from the file system. This significantly increases the complexity of brute forcing the compromised hashes considering both Argon2i and a large unknown nonce(pepper) value
+* The Blake2b operation is simply used as a secondary defense in the event there is a design weakness with Argon2i that could leak information about the password or aid an attacker
 
 ## Magic Moments
 
@@ -133,6 +126,31 @@ If you don't get the above output, either re-compile PHP 7.2+ with the flag `--w
     ➜ brew update
     ➜ brew install php
     ```
+ ### Libsodium is installed
+ To check wheter libsodium is installed in current PHP installation:
+ ```bash
+ # Good: Libsodium is installed
+ ➜ php -r 'print_r(get_loaded_extensions());' | grep -i sodium
+      [..] => sodium
+ # (or if you're using Windows for some reason)
+  ➜ php -r 'print_r(get_loaded_extensions());' | findstr /i "sodium"
+      [..] => sodium
+ ```
+ 
+ If you don't get the above output,
+ 1. Add libsodium:
+ * Ubuntu
+    ```bash
+    ➜ sudo apt-get install -y php-libsodium
+    ```
+ * Arch
+    ```bash
+    ➜ sudo pacman -Sy php-libsodium
+    ```
+ 2. Change php.ini; inside php.ini, uncomment line below:
+    ```
+    extension=sodium
+    ```
 
 ## Installation
 
@@ -144,15 +162,7 @@ Read the whole [readme](./README.md) and the [source code](./src) before going a
 
 This plugin **should not** be installed as a normal WordPress plugin.
 
-#### Option A: Via Composer Autoload (Recommended)
-
-```bash
-➜ composer require typisttech/wp-password-argon-two
-```
-
-Note: Files in [`src`](./src) will be autoloaded by composer. WP Password Argon Two **won't** appear in the WP admin dashboard.
-
-#### Option B: As a Must-use Plugin (Last Resort)
+#### As a Must-use Plugin (Composer installation is WIP)
 
 Manually copy [`wp-password-argon-two.php`](./wp-password-argon-two.php) and the whole [`src`](./src) directory into [`mu-plugins` folder](https://codex.wordpress.org/Must_Use_Plugins).
 
@@ -353,7 +363,7 @@ $ composer test
 ## Feedback
 
 **Please provide feedback!** We want to make this library useful in as many projects as possible.
-Please submit an [issue](https://github.com/TypistTech/wp-password-argon-two/issues/new) and point out what you do and don't like, or fork the project and make suggestions.
+Please submit an [issue](https://github.com/Halserach/wp-password-argon-two/issues/new) and point out what you do and don't like, or fork the project and make suggestions.
 **No issue is too small.**
 
 ## Change Log
