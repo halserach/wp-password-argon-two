@@ -1,6 +1,6 @@
 # WP Password Argon Two
 
-Securely store WordPress user passwords in database with Argon2i hashing and Blake2b using PHP + libsodium.
+Securely store WordPress user passwords in database with Argon2id hashing and Blake2b using PHP + libsodium.
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
@@ -21,7 +21,7 @@ Securely store WordPress user passwords in database with Argon2i hashing and Bla
     - [Option B - Use Environment Variables](#option-b---use-environment-variables)
 - [Usage](#usage)
   - [Pepper Migration](#pepper-migration)
-  - [Argon2i Options](#argon2i-options)
+  - [Argon2id Options](#argon2id-options)
 - [Uninstallation](#uninstallation)
 - [Frequently Asked Questions](#frequently-asked-questions)
   - [What have you done with the passwords?](#what-have-you-done-with-the-passwords)
@@ -31,7 +31,6 @@ Securely store WordPress user passwords in database with Argon2i hashing and Bla
   - [What if my pepper is compromised?](#what-if-my-pepper-is-compromised)
   - [Is pepper-ing perfect?](#is-pepper-ing-perfect)
   - [Is WordPress' phpass hasher or Bcrypt insecure?](#is-wordpress-phpass-hasher-or-bcrypt-insecure)
-  - [Why use Argon2i over the others?](#why-use-argon2i-over-the-others)
   - [Does this plugin has 72-character limit like Bcrypt?](#does-this-plugin-has-72-character-limit-like-bcrypt)
   - [It looks awesome. Where can I find some more goodies like this?](#it-looks-awesome-where-can-i-find-some-more-goodies-like-this)
   - [This plugin isn't on wp.org. Where can I give a :star::star::star::star::star: review?](#this-plugin-isnt-on-wporg-where-can-i-give-a-starstarstarstarstar-review)
@@ -52,19 +51,19 @@ Securely store WordPress user passwords in database with Argon2i hashing and Bla
 
 ## Goal
 
-Replace WordPress' [phpass](http://openwall.com/phpass) hasher with Argon2i hashing and Blake2b.
+Replace WordPress' [phpass](http://openwall.com/phpass) hasher with Argon2id hashing and Blake2b.
 
 Adopted from [Mozilla secure coding guidelines](https://wiki.mozilla.org/WebAppSec/Secure_Coding_Guidelines#Password_Storage):
 
-* Passwords stored in a database should using the blake2b+argon2i function.
+* Passwords stored in a database should using the blake2b+argon2id function.
 * Blake2b hash is generated using function from libsodium
 
-The purpose of Blake2b and Argon2i storage is as follows:
+The purpose of Blake2b and Argon2id storage is as follows:
 
-* Argon2i provides a hashing mechanism which can be configured to consume sufficient time to prevent brute forcing of hash values even with many computers
-* Argon2i can be easily adjusted at any time to increase the amount of work and thus provide protection against more powerful systems
-* The nonce(pepper) for the Blake2b value is designed to be stored on the file system and not in the databases storing the password hashes. In the event of a compromise of hash values due to SQL injection, the nonce(pepper) will still be an unknown value since it would not be compromised from the file system. This significantly increases the complexity of brute forcing the compromised hashes considering both Argon2i and a large unknown nonce(pepper) value
-* The Blake2b operation is simply used as a secondary defense in the event there is a design weakness with Argon2i that could leak information about the password or aid an attacker
+* Argon2id provides a hashing mechanism which can be configured to consume sufficient time to prevent brute forcing of hash values even with many computers
+* Argon2id can be easily adjusted at any time to increase the amount of work and thus provide protection against more powerful systems
+* The nonce(pepper) for the Blake2b value is designed to be stored on the file system and not in the databases storing the password hashes. In the event of a compromise of hash values due to SQL injection, the nonce(pepper) will still be an unknown value since it would not be compromised from the file system. This significantly increases the complexity of brute forcing the compromised hashes considering both Argon2id and a large unknown nonce(pepper) value
+* The Blake2b operation is simply used as a secondary defense in the event there is a design weakness with Argon2id that could leak information about the password or aid an attacker
 
 ## Magic Moments
 
@@ -81,7 +80,7 @@ WP Password Argon Two just works when:
 
   user passwords were hashed with Bcrypt
 
-* changing Argon2i options
+* changing Argon2id options
 
 * using new pepper while moving the old ones into `WP_PASSWORD_ARGON_TWO_FALLBACK_PEPPERS`
 
@@ -217,7 +216,7 @@ define('WP_PASSWORD_ARGON_TWO_FALLBACK_PEPPERS', [
 
 During the next user login, his/her password will be rehashed with `new-pepper`.
 
-### Argon2i Options
+### Argon2id Options
 
 > Due to the variety of platforms PHP runs on, the cost factors are deliberately set low as to not accidentally exhaust system resources on shared or low resource systems when using the default cost parameters. Consequently, users should adjust the cost factors to match the system they're working on. As Argon2 doesn't have any "bad" values, however consuming more resources is considered better than consuming less. Users are encouraged to adjust the cost factors for the platform they're developing for.
 >
@@ -227,9 +226,8 @@ You can adjust the options via `WP_PASSWORD_ARGON_TWO_OPTIONS`:
 ```php
 // Example
 define('WP_PASSWORD_ARGON_TWO_OPTIONS', [
-    'memory_cost' => 1<<17, // 128 Mb
-    'time_cost'   => 4,
-    'threads'     => 3,
+    'memlimit' => 15360000, // 15000 KiB
+    'opslimit'   => 4,
 ]);
 ```
 
@@ -245,10 +243,10 @@ You have to regenerate all user passwords after uninstallation because we can't 
 
 In a nutshell:
 ```php
-password_hash(
-    hash_hmac('sha512', $userPassword, WP_PASSWORD_ARGON_TWO_PEPPER),
-    PASSWORD_ARGON2I,
-    WP_PASSWORD_ARGON_TWO_OPTIONS
+sodium_crypto_pwhash_str(
+    sodium_crypto_generichash($userPassword, WP_PASSWORD_ARGON_TWO_PEPPER),
+    WP_PASSWORD_ARGON_TWO_OPTIONS['opslimit'],
+    WP_PASSWORD_ARGON_TWO_OPTIONS['memlimit']
 );
 ```
 
@@ -295,12 +293,6 @@ For those who can't stand with the drawbacks, use one of the [alternatives](#alt
 Both WordPress' [phpass](http://openwall.com/phpass) hasher and Bcrypt are secure. There is no emergent reason to upgrade.
 
 Learn more about the [reasons](https://roots.io/wordpress-password-security-follow-up/) about not using WordPress' default.
-
-### Why use Argon2i over the others?
-
-Argon2 password-based key derivation function is the winner of the [Password Hashing Competition](https://password-hashing.net) in July 2015, ranked better than Bcrypt and PBKDF2.
-
-Argon2 comes with 3 different modes: Argon2d, Argon2i, Argon2id. Argon2i is the one for password hashing. See: https://crypto.stackexchange.com/a/49969
 
 ### Does this plugin has 72-character limit like Bcrypt?
 
