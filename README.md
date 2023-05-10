@@ -193,6 +193,8 @@ define('WP_PASSWORD_ARGON_TWO_FALLBACK_PEPPERS', []);
 define('WP_PASSWORD_ARGON_TWO_OPTIONS', []);
 ```
 
+Note: Each pepper must have length >= 16 bytes.
+
 #### Option B - Use Environment Variables
 
 Defining the required constants in application code violates [12-factor principle](https://12factor.net/). The [`typisttech/wp-password-argon-two-env`](https://github.com/TypistTech/wp-password-argon-two-env) package allows you to configure with environment variables.
