@@ -6,7 +6,6 @@ namespace TypistTech\WPPasswordArgonTwo;
 
 class Validator implements ValidatorInterface
 {
-    protected const HASH_HMAC_ALGO = 'sha512';
 
     /**
      * Shared secret key used for generating the HMAC variant of the message digest.
@@ -35,7 +34,7 @@ class Validator implements ValidatorInterface
      */
     public function isValid(string $password, string $ciphertext): bool
     {
-        return password_verify(
+        return sodium_crypto_pwhash_str_verify(
             $this->hmac($password),
             $ciphertext
         );
@@ -43,6 +42,6 @@ class Validator implements ValidatorInterface
 
     protected function hmac(string $password): string
     {
-        return hash_hmac(self::HASH_HMAC_ALGO, $password, $this->pepper);
+        return sodium_crypto_generichash($password, $this->pepper); //with blake2b
     }
 }
