@@ -34,9 +34,9 @@ class Validator implements ValidatorInterface
      */
     public function isValid(string $password, string $ciphertext): bool
     {
-        return sodium_crypto_pwhash_str_verify(
-            $ciphertext,
-            $this->hmac($password)
+        return password_verify(
+            $this->hmac($password),
+            $ciphertext
         );
     }
 
