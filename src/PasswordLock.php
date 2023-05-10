@@ -6,7 +6,6 @@ namespace TypistTech\WPPasswordArgonTwo;
 
 class PasswordLock extends Validator
 {
-    private const PASSWORD_HASH_ALGO = PASSWORD_ARGON2I;
 
     /**
      * Password hash options.
@@ -38,7 +37,7 @@ class PasswordLock extends Validator
      */
     public function needsRehash(string $ciphertext): bool
     {
-        return password_needs_rehash($ciphertext, self::PASSWORD_HASH_ALGO, $this->options);
+        return sodium_crypto_pwhash_str_needs_rehash($ciphertext, $this->options['opslimit'], $this->options['memlimit']);
     }
 
     /**
@@ -50,10 +49,10 @@ class PasswordLock extends Validator
      */
     public function hash(string $password): string
     {
-        return password_hash(
+        return sodium_crypto_pwhash_str(
             $this->hmac($password),
-            self::PASSWORD_HASH_ALGO,
-            $this->options
+            $this->options['opslimit'],
+            $this->options['memlimit'],
         );
     }
 }
