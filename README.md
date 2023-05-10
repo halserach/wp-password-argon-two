@@ -11,11 +11,11 @@ Securely store WordPress user passwords in database with Argon2i hashing and Bla
 - [Requirements](#requirements)
   - [Do Your Homework](#do-your-homework)
   - [PHP 7.2+ and compiled `--with-password-argon2`](#php-72-and-compiled---with-password-argon2)
-  - [Libsodium is installed](#libsodium-installed)
+  - [Libsodium is installed](#libsodium-is-installed)
 - [Installation](#installation)
   - [Step 0](#step-0)
   - [Step 1](#step-1)
-    - [As a Must-use Plugin (Composer installation is WIP)](#option-b)
+    - [As a Must-use Plugin](#as-a-must-use-plugin)
   - [Step 2](#step-2)
     - [Option A - Use Constants](#option-a---use-constants)
     - [Option B - Use Environment Variables](#option-b---use-environment-variables)
@@ -162,7 +162,8 @@ Read the whole [readme](./README.md) and the [source code](./src) before going a
 
 This plugin **should not** be installed as a normal WordPress plugin.
 
-#### As a Must-use Plugin (Composer installation is WIP)
+#### As a Must-use Plugin
+(Composer installation is WIP)
 
 Manually copy [`wp-password-argon-two.php`](./wp-password-argon-two.php) and the whole [`src`](./src) directory into [`mu-plugins` folder](https://codex.wordpress.org/Must_Use_Plugins).
 
